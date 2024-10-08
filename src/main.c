@@ -56,8 +56,6 @@ int main(int argc, char* argv[])
     SDL_Renderer* renderer
         = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
-    char* filename = (char*)(malloc(sizeof(char) * 4096));
-    filename[0] = 0;
     FILE* game_dat;
 
     SDL_Event event;
@@ -76,8 +74,7 @@ int main(int argc, char* argv[])
         while (!is_file_dropped) {
             while (SDL_PollEvent(&event) > 0) {
                 if (event.type == SDL_DROPFILE) {
-                    free(filename);
-                    filename = event.drop.file;
+                    char* filename = event.drop.file;
                     game_dat = fopen(filename, "rb");
                     is_file_dropped = true;
                 }
@@ -92,11 +89,8 @@ int main(int argc, char* argv[])
         SDL_DestroyTexture(img_texture);
         SDL_FreeSurface(surface);
 
-    } else {
-        memcpy(filename, argv[1], 4096);
-        game_dat = fopen(filename, "rb");
-        free(filename);
-    }
+    } else
+        game_dat = fopen(argv[1], "rb");
 
     if (!game_dat) {
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "File cannot be opened!",
@@ -164,7 +158,7 @@ int main(int argc, char* argv[])
 
         fetch();
         decode_exec();
-        
+
         #ifdef _WIN32
             QueryPerformanceCounter(&t1);
             dt = (t1.QuadPart - t0.QuadPart) * 1000 / frequency.QuadPart;
