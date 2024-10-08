@@ -72,29 +72,18 @@ static inline uint8_t rnd() { return rand() % 256; }
 
 void draw(uint8_t x, uint8_t y, uint8_t n)
 {
-    unsigned row = y, col = x;
-    unsigned byte_index;
-    unsigned bit_index;
-
-    // set the collision flag to 0
     cpu.v[0xF] = 0;
-    for (byte_index = 0; byte_index < n; byte_index++) {
-        uint8_t byte = memory[cpu.i + byte_index];
+    uint8_t byte = 0;
+    uint8_t pixel = 0;
 
-        for (bit_index = 0; bit_index < 8; bit_index++) {
-            // the value of the bit in the sprite
-            uint8_t bit = (byte >> bit_index) & 0x1;
-            // the value of the current pixel on the screen
-            uint8_t* pixelp = &display[(col + (7 - bit_index)) % 64]
-                                      [(row + byte_index) % 32];
+    for (uint8_t i = 0; i < n; ++i) {
+        byte = memory[cpu.i + i];
 
-            // if drawing to the screen would cause any pixel to be erased,
-            // set the collision flag to 1
-            if (bit == 1 && *pixelp == 1)
-                cpu.v[0xF] = 1;
+        for (int j = 0; j < 8; ++j) {
+            pixel = (byte & (0x80 >> j)) >> (7 - j);
 
-            // draw this pixel by XOR
-            *pixelp = *pixelp ^ bit;
+            cpu.v[0xF] = pixel && display[j + x % 64][i + y % 32] ? 1 : 0;
+            display[j + x % 64][i + y % 32] ^= pixel;
         }
     }
 }
