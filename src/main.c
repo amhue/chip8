@@ -50,7 +50,7 @@ int main(int argc, char* argv[])
     SDL_Init(SDL_INIT_EVERYTHING);
 
     SDL_Window* window
-        = SDL_CreateWindow("Chip8 Emulator", SDL_WINDOWPOS_CENTERED,
+        = SDL_CreateWindow("CHIP-8 Emulator", SDL_WINDOWPOS_CENTERED,
             SDL_WINDOWPOS_CENTERED, scr_width, scr_height, 0);
 
     SDL_Renderer* renderer
