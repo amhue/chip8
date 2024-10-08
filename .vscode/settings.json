@@ -1,0 +1,12 @@
+{
+    "files.associations": {
+        "chip8.h": "c",
+        "sdl_image.h": "c",
+        "stdint.h": "c",
+        "stdbool.h": "c",
+        "stdlib.h": "c",
+        "string.h": "c",
+        "windows.h": "c",
+        "time.h": "c"
+    }
+}
