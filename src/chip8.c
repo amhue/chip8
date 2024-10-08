@@ -82,7 +82,9 @@ void draw(uint8_t x, uint8_t y, uint8_t n)
         for (int j = 0; j < 8; ++j) {
             pixel = (byte & (0x80 >> j)) >> (7 - j);
 
-            cpu.v[0xF] = pixel && display[(j + x) % 64][(i + y) % 32] ? 1 : 0;
+            if (pixel && display[(j + x) % 64][(i + y) % 32])
+                cpu.v[0xF] = 1;
+
             display[(j + x) % 64][(i + y) % 32] ^= pixel;
         }
     }
