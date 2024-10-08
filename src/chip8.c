@@ -287,20 +287,21 @@ void decode_exec()
 
         case 0x0A:
             DBG("LD V%X, K", op.x);
-            int got_key = false;
             int key_pressed = 0;
-            while (!got_key) {
-                for (int i = 0; i < 16; i++) {
-                    if (key[i] == 1) {
-                        got_key = true;
-                        key_pressed = i;
-                        break;
-                    }
+            bool got_key = false;
+            for (int i = 0; i < 16; i++) {
+                if (key[i] == 1) {
+                    got_key = true;
+                    key_pressed = i;
+                    break;
                 }
             }
 
-            cpu.v[op.x] = key_pressed;
-            cpu.pc += 2;
+            if (got_key) {
+                cpu.v[op.x] = key_pressed;
+                cpu.pc += 2;
+            }
+
             break;
 
         case 0x15:
