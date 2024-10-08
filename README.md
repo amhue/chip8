@@ -14,4 +14,5 @@ Support for more command line options and sound will be later on.
 
 ## Compatibility:
 
-The program should compile on Windows and Linux. However it has been tested only on Windows so far. As such the release for Linux shall be released later.
+The program should compile on Windows and Linux and,
+the binaries are available at https://github.com/amhue/chip8/releases.
