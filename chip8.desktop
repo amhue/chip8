@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0.3
+Type=Application
+Name=CHIP-8 Emulator
+Comment=Run CHIP-8 programs
+Exec=chip8
+Icon=./assets/icon.png
+Terminal=false
+Categories=Game;Emulator;
+StartupNotify=true

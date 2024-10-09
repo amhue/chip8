@@ -66,7 +66,7 @@ uint8_t fontset[80] = {
 
 uint8_t display[64][32] = { 0 }; // 64 x 32 pixel display
 
-extern bool key[16];
+bool key[16];
 
 static inline uint8_t rnd() { return rand() % 256; }
 

@@ -3,4 +3,5 @@
 /main.exe
 /SDL2.dll
 /out.log
-/setup.iss
+/main
+/.vscode/
