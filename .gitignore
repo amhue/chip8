@@ -4,4 +4,6 @@
 /SDL2.dll
 /out.log
 /main
+/chip8.exe
+/chip8
 /.vscode/
