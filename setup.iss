@@ -12,7 +12,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 
 [Files]
-Source: "main.exe"; DestDir: "{app}"; DestName: "chip8.exe"
+Source: "chip8.exe"; DestDir: "{app}"; DestName: "chip8.exe"
 Source: "sdl2.dll"; DestDir: "{app}"
 Source: "README.md"; DestDir: "{app}"; Flags: isreadme
 Source: "LICENSE"; DestDir: "{app}"
