@@ -7,7 +7,7 @@ ifeq ($(OS),Windows_NT)
 	MKBUILD = cmd /c "mkdir build"
 	RMBUILD = cmd /c "rmdir /s /q build"
 	RM = cmd /c "del chip8.exe"
-	LDFLAGS = -L./SDL2/lib -lmingw32 -lSDL2main -lSDL2
+	LDFLAGS = -L./SDL2/lib -lmingw32 -lSDL2main -lSDL2 -mwindows
 else
 	FILES = ./build/main.o ./build/chip8.o
 	EXEC = chip8
