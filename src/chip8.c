@@ -31,6 +31,7 @@ static struct chip8 {
     uint8_t v[16]; // general purpose registers
     uint8_t dt; // delay timer
     uint8_t st; // sound timer
+    uint8_t carry;
 } cpu;
 
 static struct opcode {
@@ -76,13 +77,22 @@ void draw(uint8_t x, uint8_t y, uint8_t n)
     uint8_t byte = 0;
     uint8_t pixel = 0;
 
-    for (uint8_t i = 0; i < n; ++i) {
+    uint8_t x_coord = x % 64;
+    uint8_t y_coord = y % 32;
+
+    for (uint8_t i = 0; i < n; i++) {
+        if (y_coord + i >= 32)
+            break;
+
         byte = memory[cpu.i + i];
 
-        for (int j = 0; j < 8; ++j) {
+        for (int j = 0; j < 8; j++) {
+            if (x_coord + j >= 64)
+                break;
+
             pixel = (byte & (0x80 >> j)) >> (7 - j);
 
-            if (pixel && display[(j + x) % 64][(i + y) % 32])
+            if (pixel && display[j + x_coord][i + y_coord])
                 cpu.v[0xF] = 1;
 
             display[(j + x) % 64][(i + y) % 32] ^= pixel;
@@ -113,6 +123,19 @@ void fetch()
     op.kk = op.inst & 0xFF;
 
     DBG("pc: 0x%04X, op: 0x%04X, cat: %X", cpu.pc, op.inst, op.cat);
+
+    // Register states
+
+    DBG("+--------+---------+---------+--------+");
+    DBG("|V0 = %02X | V1 = %02X | V2 = %02X | V3 = %02X|",
+        cpu.v[0x0], cpu.v[0x1], cpu.v[0x2], cpu.v[0x3]);
+    DBG("|V4 = %02X | V5 = %02X | V6 = %02X | V7 = %02X|",
+        cpu.v[0x4], cpu.v[0x5], cpu.v[0x6], cpu.v[0x7]);
+    DBG("|V8 = %02X | V9 = %02X | VA = %02X | VB = %02X|",
+        cpu.v[0x8], cpu.v[0x9], cpu.v[0xA], cpu.v[0xB]);
+    DBG("|VC = %02X | VD = %02X | VE = %02X | VF = %02X|",
+        cpu.v[0xC], cpu.v[0xD], cpu.v[0xE], cpu.v[0xF]);
+    DBG("+--------+---------+---------+--------+");
 }
 
 void decode_exec()
@@ -183,51 +206,63 @@ void decode_exec()
         case 0x1:
             DBG("OR V%X, V%X", op.x, op.y);
             cpu.v[op.x] |= cpu.v[op.y];
+            cpu.v[0xF] = 0;
             cpu.pc += 2;
             break;
 
         case 0x2:
             DBG("AND V%X, V%X", op.x, op.y);
             cpu.v[op.x] &= cpu.v[op.y];
+            cpu.v[0xF] = 0;
             cpu.pc += 2;
             break;
 
         case 0x3:
             DBG("XOR V%X, V%X", op.x, op.y);
             cpu.v[op.x] ^= cpu.v[op.y];
+            cpu.v[0xF] = 0;
             cpu.pc += 2;
             break;
 
         case 0x4:
             DBG("ADD V%X, V%X", op.x, op.y);
-            cpu.v[0xF] = (int)(cpu.v[op.x]) + (int)(cpu.v[op.y]) > 255 ? 1 : 0;
+            cpu.carry = (int)(cpu.v[op.x]) + (int)(cpu.v[op.y]) > 255;
             cpu.v[op.x] += cpu.v[op.y];
+            cpu.v[0xF] = cpu.carry;
             cpu.pc += 2;
             break;
 
         case 0x5:
             DBG("SUB V%X, V%X", op.x, op.y);
-            cpu.v[0xF] = cpu.v[op.x] > cpu.v[op.y] ? 1 : 0;
+            cpu.carry = cpu.v[op.x] >= cpu.v[op.y];
             cpu.v[op.x] -= cpu.v[op.y];
+            cpu.v[0xF] = cpu.carry;
             cpu.pc += 2;
             break;
 
         case 0x6:
-            DBG("SHR V%X {, V%X}", op.x, op.y);
-            cpu.v[op.x] = cpu.v[op.x] >> 1;
+            DBG("SHR V%X, V%X", op.x, op.y);
+            cpu.carry = cpu.v[op.y] & 1;
+            cpu.v[op.y] >>= 1;
+            cpu.v[op.x] = cpu.v[op.y];
+            cpu.v[0xF] = cpu.carry;
             cpu.pc += 2;
             break;
 
         case 0x7:
             DBG("SUBN V%X, V%X", op.x, op.y);
-            cpu.v[0xF] = cpu.v[op.x] > cpu.v[op.y] ? 0 : 1;
+            cpu.carry = cpu.v[op.x] <= cpu.v[op.y];
             cpu.v[op.x] = cpu.v[op.y] - cpu.v[op.x];
+            cpu.v[0xF] = cpu.carry;
             cpu.pc += 2;
             break;
 
-        case 0x8:
-            DBG("SHL V%X {, V%X}", op.x, op.y);
-            cpu.v[op.x] = cpu.v[op.x] << 1;
+        case 0xE:
+            DBG("SHL V%X, V%X", op.x, op.y);
+            cpu.carry = (cpu.v[op.y] & 0x80) >> 7;
+            cpu.v[op.y] <<= 1;
+            cpu.v[op.x] = cpu.v[op.y];
+            cpu.v[0xF] = cpu.carry;
             cpu.pc += 2;
             break;
         }
@@ -257,7 +292,7 @@ void decode_exec()
         break;
 
     case 0xD:
-        DBG("DRW V%X, V%Y, %X", op.x, op.y, op.n);
+        DBG("DRW V%X, V%X, %X", op.x, op.y, op.n);
         draw(cpu.v[op.x], cpu.v[op.y], op.n);
         cpu.pc += 2;
         break;
@@ -287,20 +322,26 @@ void decode_exec()
 
         case 0x0A:
             DBG("LD V%X, K", op.x);
-            int key_pressed = 0;
-            bool got_key = false;
-            for (int i = 0; i < 16; i++) {
-                if (key[i] == 1) {
-                    got_key = true;
-                    key_pressed = i;
-                    break;
+            static int key_pressed = 0xFF;
+            static bool got_key = false;
+
+            if (!got_key) {
+                for (int i = 0; i < 16; i++) {
+                    if (key[i]) {
+                        got_key = true;
+                        key_pressed = i;
+                        break;
+                    }
                 }
             }
 
-            if (got_key) {
-                cpu.v[op.x] = key_pressed;
-                cpu.pc += 2;
-            }
+            if (got_key)
+                if (!key[key_pressed]) {
+                    cpu.v[op.x] = key_pressed;
+                    key_pressed = 0xFF;
+                    got_key = false;
+                    cpu.pc += 2;
+                }
 
             break;
 
@@ -342,7 +383,7 @@ void decode_exec()
             DBG("LD [I], V%X", op.x);
 
             for (int i = 0; i <= op.x; i++) {
-                memory[cpu.i + i] = cpu.v[i];
+                memory[cpu.i++] = cpu.v[i];
             }
 
             cpu.pc += 2;
@@ -352,7 +393,7 @@ void decode_exec()
             DBG("LD V%X, [I]", op.x);
 
             for (int i = 0; i <= op.x; i++) {
-                cpu.v[i] = memory[cpu.i + i];
+                cpu.v[i] = memory[cpu.i++];
             }
 
             cpu.pc += 2;
@@ -361,6 +402,8 @@ void decode_exec()
 
         break;
     }
+
+    DBG("");
 
     if (cpu.dt > 0) {
         --cpu.dt;

@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -42,7 +43,7 @@ extern bool key[16];
 
 int main(int argc, char* argv[])
 {
-    const int scale_factor = 10;
+    const int scale_factor = 20;
     const int scr_width = 64 * scale_factor;
     const int scr_height = 32 * scale_factor;
 
@@ -120,8 +121,8 @@ int main(int argc, char* argv[])
         for (int x = 0; x < 64; ++x) {
             for (int y = 0; y < 32; ++y) {
                 if (display[x][y]) {
-                    rect->x = x * 10;
-                    rect->y = y * 10;
+                    rect->x = x * scale_factor;
+                    rect->y = y * scale_factor;
                     SDL_SetRenderDrawColor(
                         renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
                     SDL_RenderFillRect(renderer, rect);
@@ -168,7 +169,7 @@ int main(int argc, char* argv[])
             dt += (t1.tv_usec - t0.tv_usec) / 1000;
         #endif
 
-        SDL_Delay(1 > dt ? 1 - dt : 0);
+        SDL_Delay(2 > dt ? 2 - dt : 0);
     }
 
     free(rect);
