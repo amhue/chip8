@@ -4,6 +4,7 @@
  * @copyright 2024
  */
 
+#include "config.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -31,7 +32,7 @@ static struct chip8 {
     uint8_t v[16]; // general purpose registers
     uint8_t dt; // delay timer
     uint8_t st; // sound timer
-    uint8_t carry;
+    uint8_t carry; // carry flag
 } cpu;
 
 static struct opcode {
@@ -65,6 +66,8 @@ uint8_t fontset[80] = {
     0xF0, 0x80, 0xF0, 0x80, 0x80 // F
 };
 
+struct config config;
+
 uint8_t display[64][32] = { 0 }; // 64 x 32 pixel display
 
 bool key[16];
@@ -77,17 +80,17 @@ void draw(uint8_t x, uint8_t y, uint8_t n)
     uint8_t byte = 0;
     uint8_t pixel = 0;
 
-    uint8_t x_coord = x % 64;
-    uint8_t y_coord = y % 32;
+    uint8_t x_coord = x % config.scr_width;
+    uint8_t y_coord = y % config.scr_height;
 
     for (uint8_t i = 0; i < n; i++) {
-        if (y_coord + i >= 32)
+        if (y_coord + i >= config.scr_height)
             break;
 
         byte = memory[cpu.i + i];
 
         for (int j = 0; j < 8; j++) {
-            if (x_coord + j >= 64)
+            if (x_coord + j >= config.scr_width)
                 break;
 
             pixel = (byte & (0x80 >> j)) >> (7 - j);
@@ -95,7 +98,7 @@ void draw(uint8_t x, uint8_t y, uint8_t n)
             if (pixel && display[j + x_coord][i + y_coord])
                 cpu.v[0xF] = 1;
 
-            display[(j + x) % 64][(i + y) % 32] ^= pixel;
+            display[(j + x) % config.scr_width][(i + y) % config.scr_height] ^= pixel;
         }
     }
 }
@@ -127,15 +130,17 @@ void fetch()
     // Register states
 
     DBG("+--------+---------+---------+--------+");
-    DBG("|V0 = %02X | V1 = %02X | V2 = %02X | V3 = %02X|",
-        cpu.v[0x0], cpu.v[0x1], cpu.v[0x2], cpu.v[0x3]);
-    DBG("|V4 = %02X | V5 = %02X | V6 = %02X | V7 = %02X|",
-        cpu.v[0x4], cpu.v[0x5], cpu.v[0x6], cpu.v[0x7]);
-    DBG("|V8 = %02X | V9 = %02X | VA = %02X | VB = %02X|",
-        cpu.v[0x8], cpu.v[0x9], cpu.v[0xA], cpu.v[0xB]);
-    DBG("|VC = %02X | VD = %02X | VE = %02X | VF = %02X|",
-        cpu.v[0xC], cpu.v[0xD], cpu.v[0xE], cpu.v[0xF]);
+    DBG("|V0 = %02X | V1 = %02X | V2 = %02X | V3 = %02X|", cpu.v[0x0],
+        cpu.v[0x1], cpu.v[0x2], cpu.v[0x3]);
+    DBG("|V4 = %02X | V5 = %02X | V6 = %02X | V7 = %02X|", cpu.v[0x4],
+        cpu.v[0x5], cpu.v[0x6], cpu.v[0x7]);
+    DBG("|V8 = %02X | V9 = %02X | VA = %02X | VB = %02X|", cpu.v[0x8],
+        cpu.v[0x9], cpu.v[0xA], cpu.v[0xB]);
+    DBG("|VC = %02X | VD = %02X | VE = %02X | VF = %02X|", cpu.v[0xC],
+        cpu.v[0xD], cpu.v[0xE], cpu.v[0xF]);
     DBG("+--------+---------+---------+--------+");
+
+    DBG("I = %03X, SP = %X", cpu.i, cpu.sp);
 }
 
 void decode_exec()
@@ -145,13 +150,17 @@ void decode_exec()
         switch (op.kk) {
         case 0xE0:
             DBG("CLS");
-            memset(display, 0, 32 * 64);
+            memset(display, 0, config.scr_height * config.scr_width);
             cpu.pc += 2;
             break;
 
         case 0xEE:
             DBG("RET");
             cpu.pc = cpu.stack[--cpu.sp];
+            break;
+
+        default:
+            fprintf(stderr, "Unknown opcode %04X!\n", op.inst);
             break;
         }
 
@@ -265,13 +274,17 @@ void decode_exec()
             cpu.v[0xF] = cpu.carry;
             cpu.pc += 2;
             break;
+
+        default:
+            fprintf(stderr, "Unknown opcode %04X!\n", op.inst);
+            break;
         }
 
         break;
 
     case 0x9:
-        DBG("SNE V%X, %02X", op.x, op.kk);
-        cpu.pc += cpu.v[op.x] != op.kk ? 4 : 2;
+        DBG("SNE V%X, V%X", op.x, op.y);
+        cpu.pc += cpu.v[op.x] != cpu.v[op.y] ? 4 : 2;
         break;
 
     case 0xA:
@@ -307,6 +320,10 @@ void decode_exec()
         case 0xA1:
             DBG("SKP V%X", op.x);
             cpu.pc += !key[cpu.v[op.x]] ? 4 : 2;
+            break;
+
+        default:
+            fprintf(stderr, "Unknown opcode %04X!\n", op.inst);
             break;
         }
 
@@ -398,9 +415,17 @@ void decode_exec()
 
             cpu.pc += 2;
             break;
+
+        default:
+            fprintf(stderr, "Unknown opcode %04X!\n", op.inst);
+            break;
         }
 
         break;
+
+        default:
+            fprintf(stderr, "Unknown opcode %04X!\n", op.inst);
+            break;
     }
 
     DBG("");

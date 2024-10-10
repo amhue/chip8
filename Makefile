@@ -14,7 +14,7 @@ else
 	MKBUILD = if [ ! -d "./build" ]; then mkdir build; fi
 	RMBUILD = rm -rf build
 	RM = rm chip8
-	LDFLAGS = -L./SDL2/lib -lSDL2 -lSDL2main
+	LDFLAGS = -L./SDL2/lib -lSDL2main -lSDL2
 endif
 
 all: $(FILES)

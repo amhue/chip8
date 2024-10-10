@@ -5,12 +5,13 @@
  */
 
 #include "chip8.h"
+#include "config.h"
 #include <SDL2/SDL.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -36,6 +37,8 @@ double dt; // time required for one emulation cycle
 extern uint8_t display[64][32];
 extern uint8_t memory[4096];
 
+extern struct config config;
+
 uint8_t keymap[] = { SDLK_x, SDLK_1, SDLK_2, SDLK_3, SDLK_q, SDLK_w, SDLK_e,
     SDLK_a, SDLK_s, SDLK_d, SDLK_z, SDLK_c, SDLK_4, SDLK_r, SDLK_f, SDLK_v };
 
@@ -43,16 +46,27 @@ extern bool key[16];
 
 int main(int argc, char* argv[])
 {
-    const int scale_factor = 20;
-    const int scr_width = 64 * scale_factor;
-    const int scr_height = 32 * scale_factor;
+    config.scale_factor = 15;
+    config.scr_width = 64;
+    config.scr_height = 32;
+
+    config.bg_r = 0;
+    config.bg_g = 0;
+    config.bg_b = 0;
+    config.bg_a = SDL_ALPHA_OPAQUE;
+
+    config.fg_r = 255;
+    config.fg_g = 255;
+    config.fg_b = 255;
+    config.fg_a = SDL_ALPHA_OPAQUE;
 
     bool is_window_open = true;
     SDL_Init(SDL_INIT_EVERYTHING);
 
     SDL_Window* window
         = SDL_CreateWindow("CHIP-8 Emulator", SDL_WINDOWPOS_CENTERED,
-            SDL_WINDOWPOS_CENTERED, scr_width, scr_height, 0);
+            SDL_WINDOWPOS_CENTERED, config.scr_width * config.scale_factor,
+            config.scr_height * config.scale_factor, 0);
 
     SDL_Renderer* renderer
         = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
@@ -107,25 +121,30 @@ int main(int argc, char* argv[])
 
     SDL_Rect* rect = (SDL_Rect*)(malloc(sizeof(SDL_Rect)));
 
-    rect->w = scale_factor;
-    rect->h = scale_factor;
+    rect->w = config.scale_factor;
+    rect->h = config.scale_factor;
     rect->x = 0;
     rect->y = 0;
 
     init();
 
     while (is_window_open) {
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+        SDL_SetRenderDrawColor(
+            renderer, config.bg_r, config.bg_g, config.bg_b, config.bg_a);
         SDL_RenderClear(renderer);
 
-        for (int x = 0; x < 64; ++x) {
-            for (int y = 0; y < 32; ++y) {
+        for (int x = 0; x < config.scr_width; ++x) {
+            for (int y = 0; y < config.scr_height; ++y) {
                 if (display[x][y]) {
-                    rect->x = x * scale_factor;
-                    rect->y = y * scale_factor;
-                    SDL_SetRenderDrawColor(
-                        renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+                    rect->x = x * config.scale_factor;
+                    rect->y = y * config.scale_factor;
+                    SDL_SetRenderDrawColor(renderer, config.fg_r, config.fg_g,
+                        config.fg_b, config.fg_a);
                     SDL_RenderFillRect(renderer, rect);
+
+                    SDL_SetRenderDrawColor(renderer, config.bg_r, config.bg_g,
+                        config.bg_b, config.bg_a);
+                    SDL_RenderDrawRect(renderer, rect);
                 }
             }
         }
