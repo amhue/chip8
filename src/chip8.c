@@ -5,7 +5,6 @@
  */
 
 #include "config.h"
-#include "timer.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>

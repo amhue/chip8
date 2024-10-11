@@ -5,7 +5,6 @@
  */
 
 #include <SDL2/SDL.h>
-#include <stdbool.h>
 #include <stdint.h>
 
 static SDL_AudioDeviceID audio_dev;

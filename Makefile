@@ -44,3 +44,5 @@ build:
 clean:
 	$(RMBUILD)
 	$(RM)
+
+.PHONY: all clean

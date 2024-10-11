@@ -14,7 +14,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #define CPU_FREQUENCY 600
 #define REFRESH_RATE 60
