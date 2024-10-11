@@ -4,6 +4,7 @@
  * @copyright 2024
  */
 
+#include "audio.h"
 #include "config.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -98,12 +99,13 @@ void draw(uint8_t x, uint8_t y, uint8_t n)
             if (pixel && display[j + x_coord][i + y_coord])
                 cpu.v[0xF] = 1;
 
-            display[(j + x) % config.scr_width][(i + y) % config.scr_height] ^= pixel;
+            display[(j + x) % config.scr_width][(i + y) % config.scr_height]
+                ^= pixel;
         }
     }
 }
 
-void init()
+void init_sys()
 {
     srand(time(NULL));
     cpu.pc = 0x200;
@@ -423,9 +425,9 @@ void decode_exec()
 
         break;
 
-        default:
-            fprintf(stderr, "Unknown opcode %04X!\n", op.inst);
-            break;
+    default:
+        fprintf(stderr, "Unknown opcode %04X!\n", op.inst);
+        break;
     }
 
     DBG("");
@@ -436,8 +438,10 @@ void decode_exec()
 
     if (cpu.st > 0) {
         --cpu.st;
-        if (cpu.st == 0) {
-            printf("BEEP!\n");
+        if (cpu.st > 0) {
+            beep_start();
+        } else {
+            beep_stop();
         }
     }
 }

@@ -4,6 +4,7 @@
  * @copyright 2024
  */
 
+#include "audio.h"
 #include "chip8.h"
 #include "config.h"
 #include <SDL2/SDL.h>
@@ -13,30 +14,19 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef _WIN32
-#include <windows.h>
-
 // ticks
-LARGE_INTEGER t0;
-LARGE_INTEGER t1;
+static uint64_t t0;
+static uint64_t t1;
 
 // ticks per second
-LARGE_INTEGER frequency;
-
-#else
-#include <sys/time.h>
-
-// time intervals
-struct timeval t0;
-struct timeval t1;
-
-#endif
+static uint64_t freq;
 
 double dt; // time required for one emulation cycle
 
 extern uint8_t display[64][32];
 extern uint8_t memory[4096];
 
+// emulation system configuration
 extern struct config config;
 
 uint8_t keymap[] = { SDLK_x, SDLK_1, SDLK_2, SDLK_3, SDLK_q, SDLK_w, SDLK_e,
@@ -126,9 +116,13 @@ int main(int argc, char* argv[])
     rect->x = 0;
     rect->y = 0;
 
-    init();
+    init_sys();
+    init_audio();
 
     while (is_window_open) {
+        t0 = SDL_GetPerformanceCounter();
+        freq = SDL_GetPerformanceFrequency();
+
         SDL_SetRenderDrawColor(
             renderer, config.bg_r, config.bg_g, config.bg_b, config.bg_a);
         SDL_RenderClear(renderer);
@@ -169,28 +163,15 @@ int main(int argc, char* argv[])
                         key[i] = 0;
         }
 
-        #ifdef _WIN32
-            QueryPerformanceFrequency(&frequency);
-            QueryPerformanceCounter(&t0);
-        #else
-            gettimeofday(&t0, NULL);
-        #endif
-
         fetch();
         decode_exec();
 
-        #ifdef _WIN32
-            QueryPerformanceCounter(&t1);
-            dt = (t1.QuadPart - t0.QuadPart) * 1000 / frequency.QuadPart;
-        #else
-            gettimeofday(&t1, NULL);
-            dt = (t1.tv_sec - t0.tv_sec) * 1000;
-            dt += (t1.tv_usec - t0.tv_usec) / 1000;
-        #endif
-
-        SDL_Delay(2 > dt ? 2 - dt : 0);
+        t1 = SDL_GetPerformanceCounter();
+        dt = (t1 - t0) * 1000 / freq;
+        SDL_Delay(5 > dt ? 5 - dt : 0);
     }
 
+    close_audio();
     free(rect);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);

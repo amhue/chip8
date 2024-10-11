@@ -7,7 +7,7 @@
 #ifndef CHIP_8_H
 #define CHIP_8_H
 
-void init();
+void init_sys();
 void fetch();
 void decode_exec();
 

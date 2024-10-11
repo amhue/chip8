@@ -1,6 +1,6 @@
 [Setup]
 AppName=CHIP-8 Emulator
-AppVersion=1.1.2
+AppVersion=1.1.3
 WizardStyle=modern
 DefaultDirName={autopf}\CHIP-8 Emulator
 DefaultGroupName=CHIP-8 Emulator

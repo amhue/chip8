@@ -1,13 +1,20 @@
+/**
+ * @file config.h
+ * @author Aritra Mondal
+ * @copyright 2024
+ */
+
 #ifndef CONFIG_H
 #define CONFIG_H
 
 #include <stdint.h>
 
+// structure for configuration of emulation system
 struct config {
     uint32_t scale_factor;
     uint32_t scr_width;
     uint32_t scr_height;
-    
+
     // background rgba
     uint8_t bg_r;
     uint8_t bg_g;
