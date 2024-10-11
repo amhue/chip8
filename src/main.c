@@ -16,7 +16,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define CYCLES_PER_FRAME 10
+#define CPU_FREQUENCY 600
+#define REFRESH_RATE 60
 
 // ticks
 static uint64_t t0;
@@ -151,8 +152,8 @@ int main(int argc, char* argv[])
         t0 = SDL_GetPerformanceCounter();
         freq = SDL_GetPerformanceFrequency();
 
-        // run 8 cycles per frame i.e. 480 cycle @ 60 Hz
-        for (int i = 0; i < CYCLES_PER_FRAME; ++i) {
+        // run 10 cycles per frame i.e. 600 cycles @ 60 Hz
+        for (int i = 0; i < CPU_FREQUENCY / REFRESH_RATE; ++i) {
             fetch();
             decode_exec();
 
