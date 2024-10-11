@@ -7,12 +7,16 @@
 #include "audio.h"
 #include "chip8.h"
 #include "config.h"
+#include "display.h"
+#include "timer.h"
 #include <SDL2/SDL.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#define CYCLES_PER_FRAME 10
 
 // ticks
 static uint64_t t0;
@@ -33,6 +37,7 @@ uint8_t keymap[] = { SDLK_x, SDLK_1, SDLK_2, SDLK_3, SDLK_q, SDLK_w, SDLK_e,
     SDLK_a, SDLK_s, SDLK_d, SDLK_z, SDLK_c, SDLK_4, SDLK_r, SDLK_f, SDLK_v };
 
 extern bool key[16];
+extern bool draw_flag;
 
 int main(int argc, char* argv[])
 {
@@ -120,30 +125,10 @@ int main(int argc, char* argv[])
     init_audio();
 
     while (is_window_open) {
-        t0 = SDL_GetPerformanceCounter();
-        freq = SDL_GetPerformanceFrequency();
-
-        SDL_SetRenderDrawColor(
-            renderer, config.bg_r, config.bg_g, config.bg_b, config.bg_a);
-        SDL_RenderClear(renderer);
-
-        for (int x = 0; x < config.scr_width; ++x) {
-            for (int y = 0; y < config.scr_height; ++y) {
-                if (display[x][y]) {
-                    rect->x = x * config.scale_factor;
-                    rect->y = y * config.scale_factor;
-                    SDL_SetRenderDrawColor(renderer, config.fg_r, config.fg_g,
-                        config.fg_b, config.fg_a);
-                    SDL_RenderFillRect(renderer, rect);
-
-                    SDL_SetRenderDrawColor(renderer, config.bg_r, config.bg_g,
-                        config.bg_b, config.bg_a);
-                    SDL_RenderDrawRect(renderer, rect);
-                }
-            }
+        if (draw_flag) {
+            re_paint(rect, renderer);
+            draw_flag = false;
         }
-
-        SDL_RenderPresent(renderer);
 
         while (SDL_PollEvent(&event) > 0) {
             if (event.type == SDL_QUIT)
@@ -163,12 +148,23 @@ int main(int argc, char* argv[])
                         key[i] = 0;
         }
 
-        fetch();
-        decode_exec();
+        t0 = SDL_GetPerformanceCounter();
+        freq = SDL_GetPerformanceFrequency();
+
+        // run 8 cycles per frame i.e. 480 cycle @ 60 Hz
+        for (int i = 0; i < CYCLES_PER_FRAME; ++i) {
+            fetch();
+            decode_exec();
+
+            if (draw_flag)
+                break;
+        }
 
         t1 = SDL_GetPerformanceCounter();
         dt = (t1 - t0) * 1000 / freq;
-        SDL_Delay(5 > dt ? 5 - dt : 0);
+        SDL_Delay(16.67 > dt ? 16.67 - dt : 0);
+
+        update_timers();
     }
 
     close_audio();

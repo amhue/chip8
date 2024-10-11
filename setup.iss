@@ -1,6 +1,6 @@
 [Setup]
 AppName=CHIP-8 Emulator
-AppVersion=1.1.3
+AppVersion=1.1.5
 WizardStyle=modern
 DefaultDirName={autopf}\CHIP-8 Emulator
 DefaultGroupName=CHIP-8 Emulator
@@ -10,6 +10,7 @@ SolidCompression=yes
 OutputDir=userdocs:Inno Setup Examples Output
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
+LicenseFile="LICENSE"
 
 [Files]
 Source: "chip8.exe"; DestDir: "{app}"; DestName: "chip8.exe"

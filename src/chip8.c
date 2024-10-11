@@ -4,8 +4,8 @@
  * @copyright 2024
  */
 
-#include "audio.h"
 #include "config.h"
+#include "timer.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -31,8 +31,6 @@ static struct chip8 {
     uint16_t stack[16];
     uint8_t sp; // stack pointer register
     uint8_t v[16]; // general purpose registers
-    uint8_t dt; // delay timer
-    uint8_t st; // sound timer
     uint8_t carry; // carry flag
 } cpu;
 
@@ -46,7 +44,15 @@ static struct opcode {
     uint8_t kk; // lower byte
 } op;
 
+struct timer {
+    uint8_t dt; // delay timer
+    uint8_t st; // sound timer
+};
+
+extern struct timer timer;
+
 uint8_t memory[4096];
+bool draw_flag = false;
 
 uint8_t fontset[80] = {
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -109,8 +115,8 @@ void init_sys()
 {
     srand(time(NULL));
     cpu.pc = 0x200;
-    cpu.dt = 0;
-    cpu.st = 0;
+    timer.dt = 0;
+    timer.st = 0;
     cpu.sp = 0;
     cpu.i = 0;
     memset(&(cpu.stack[0]), 0, 16);
@@ -153,6 +159,7 @@ void decode_exec()
         case 0xE0:
             DBG("CLS");
             memset(display, 0, config.scr_height * config.scr_width);
+            draw_flag = true;
             cpu.pc += 2;
             break;
 
@@ -309,6 +316,7 @@ void decode_exec()
     case 0xD:
         DBG("DRW V%X, V%X, %X", op.x, op.y, op.n);
         draw(cpu.v[op.x], cpu.v[op.y], op.n);
+        draw_flag = true;
         cpu.pc += 2;
         break;
 
@@ -335,7 +343,7 @@ void decode_exec()
         switch (op.kk) {
         case 0x07:
             DBG("LD V%X, DT", op.x);
-            cpu.v[op.x] = cpu.dt;
+            cpu.v[op.x] = timer.dt;
             cpu.pc += 2;
             break;
 
@@ -366,13 +374,13 @@ void decode_exec()
 
         case 0x15:
             DBG("LD DT, V%X", op.x);
-            cpu.dt = cpu.v[op.x];
+            timer.dt = cpu.v[op.x];
             cpu.pc += 2;
             break;
 
         case 0x18:
             DBG("LD ST, V%X", op.x);
-            cpu.st = cpu.v[op.x];
+            timer.st = cpu.v[op.x];
             cpu.pc += 2;
             break;
 
@@ -431,17 +439,4 @@ void decode_exec()
     }
 
     DBG("");
-
-    if (cpu.dt > 0) {
-        --cpu.dt;
-    }
-
-    if (cpu.st > 0) {
-        --cpu.st;
-        if (cpu.st > 0) {
-            beep_start();
-        } else {
-            beep_stop();
-        }
-    }
 }
